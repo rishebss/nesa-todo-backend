@@ -10,7 +10,7 @@ const port = process.env.PORT || 3000;
 const allowedOrigins = [
   'http://localhost:5173',
   'https://your-frontend-domain.vercel.app', // Your frontend URL
-  'https://nesa-todo-frontend.vercel.app/' // Example frontend
+  'https://nesa-todo-frontend.vercel.app' // Example frontend
 ];
 
 app.use(cors({
