@@ -6,37 +6,37 @@ import cors from "cors";
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ========== SIMPLE CORS SETUP ==========
-// This is usually sufficient for development
+// CORS configuration
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://your-frontend-domain.vercel.app', // Your frontend URL
+  'https://nesa-todo-frontend.vercel.app' // Example frontend
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:5174', 
-    'http://localhost:3000',
-    'http://127.0.0.1:5173'
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],  // Added OPTIONS here
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// ========== REST OF YOUR SERVER CODE ==========
 app.use(express.json());
 
+// Routes
 app.get("/", (req, res) => {
   res.json({
     message: "✅ Nesa Todo API is running",
     version: "1.0.0",
-    endpoints: {
-      todos: {
-        create: "POST /api/todos",
-        getAll: "GET /api/todos",
-        getStats: "GET /api/todos/stats",
-        getOne: "GET /api/todos/:id",
-        update: "PUT /api/todos/:id",
-        delete: "DELETE /api/todos/:id"
-      }
-    }
+    environment: process.env.NODE_ENV
   });
 });
 
@@ -50,18 +50,22 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler
+// Error handler
 app.use((err, req, res, next) => {
-  console.error("Global error:", err);
+  console.error("Error:", err);
   res.status(500).json({
     success: false,
     error: "Internal server error",
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+    message: process.env.NODE_ENV === 'production' ? undefined : err.message
   });
 });
 
-app.listen(port, () => {
-  console.log(`🚀 Server running on http://localhost:${port}`);
-  console.log(`📝 Todo API available at http://localhost:${port}/api/todos`);
-  console.log(`🌐 CORS enabled for development`);
-});
+// Export for Vercel
+export default app;
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, () => {
+    console.log(`🚀 Server running on http://localhost:${port}`);
+  });
+}
